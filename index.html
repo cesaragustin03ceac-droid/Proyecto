@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nuestros Locales</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0f0f23;
+            color: #fff;
+            height: 100%;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ===== PANTALLA DE INICIO ===== */
+        #homeScreen {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 24px 20px 32px;
+            text-align: center;
+            border-radius: 0 0 24px 24px;
+            box-shadow: 0 8px 32px rgba(102,126,234,0.3);
+        }
+        .header h1 { font-size: 24px; margin-bottom: 6px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+
+        .grid-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding-bottom: 40px;
+        }
+        .card {
+            background: #1a1a3e;
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .card:hover, .card:active {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(102,126,234,0.2);
+            border-color: rgba(102,126,234,0.3);
+        }
+        .card:hover::before, .card:active::before { opacity: 1; }
+        .card-icon { font-size: 36px; margin-bottom: 10px; }
+        .card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .card-desc { font-size: 12px; color: #a0a0c0; line-height: 1.4; }
+
+        /* ===== PANTALLA DE DETALLE ===== */
+        #detailScreen {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+            animation: slideInRight 0.35s ease;
+        }
+        .detail-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-radius: 0 0 20px 20px;
+        }
+        .back-btn {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.3); }
+        .detail-header h2 { font-size: 18px; font-weight: 600; }
+
+        .detail-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .map-container {
+            width: 100%;
+            height: 220px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #1a1a3e;
+        }
+        .map-container iframe {
+            width: 100%; height: 100%;
+            border: none;
+        }
+        .info-section {
+            background: #1a1a3e;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .info-section h3 {
+            font-size: 14px;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .info-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #d0d0e0;
+            line-height: 1.5;
+        }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+
+        /* ===== BOTONES RESPONSIVE ===== */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .btn-action {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.2s, opacity 0.2s;
+            min-height: 48px;
+        }
+        .btn-action:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn-whatsapp { background: #25d366; color: white; }
+        .btn-maps { background: #4285f4; color: white; }
+        .btn-tiktok { background: #000000; color: white; border: 1px solid #333; }
+
+        /* En pantallas más anchas (tablets o landscape) ponlos en fila */
+        @media (min-width: 480px) {
+            .action-buttons {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .btn-action {
+                flex: 1 1 calc(50% - 5px);
+                width: auto;
+            }
+        }
+        @media (min-width: 640px) {
+            .btn-action {
+                flex: 1 1 auto;
+                min-width: 120px;
+            }
+        }
+
+        /* ===== ANIMACIONES ===== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideOutRight {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(40px); }
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(102,126,234,0.4); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <!-- ===== PANTALLA DE INICIO ===== -->
+    <div id="homeScreen">
+        <div class="header">
+            <h1>🚀 Nuestros Locales</h1>
+            <p>Selecciona tu estado para ver información</p>
+        </div>
+        <div class="grid-container" id="cardsGrid">
+            <!-- Las tarjetas se generan con JavaScript -->
+        </div>
+    </div>
+
+    <!-- ===== PANTALLA DE DETALLE ===== -->
+    <div id="detailScreen">
+        <div class="detail-header">
+            <button class="back-btn" onclick="goBack()">←</button>
+            <h2 id="detailTitle">Local</h2>
+        </div>
+        <div class="detail-body">
+            <div class="map-container">
+                <iframe id="detailMap" allowfullscreen loading="lazy"></iframe>
+            </div>
+            
+            <div class="info-section">
+                <h3>📍 Ubicación</h3>
+                <div class="info-row">
+                    <span class="info-icon">🏢</span>
+                    <span id="detailAddress">Dirección del local</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-icon">🌎</span>
+                    <span id="detailCity">Ciudad, Estado</span>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>🕐 Horario</h3>
+                <div class="info-row">
+                    <span class="info-icon">📅</span>
+                    <span id="detailSchedule">Lunes a Viernes: 9:00 - 20:00</span>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>📞 Contacto</h3>
+                <div class="info-row">
+                    <span class="info-icon">📱</span>
+                    <span id="detailPhone">+52 771 159 8765</span>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-action btn-whatsapp" onclick="openWhatsApp()">
+                    💬 WhatsApp
+                </button>
+                <button class="btn-action btn-maps" onclick="openGoogleMaps()">
+                    🗺️ Cómo llegar
+                </button>
+                <button class="btn-action btn-tiktok" onclick="openTikTok()">
+                    🎵 TikTok
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== DATOS DE TUS 7 LOCALES =====
+        const locales = [
+            {
+                id: 'cdmx',
+                nombre: 'Ciudad de México',
+                icono: '🏙️',
+                desc: 'Sucursal principal en el centro',
+                direccion: 'Av. Insurgentes Sur 1234, Col. Del Valle',
+                ciudad: 'Benito Juárez, CDMX',
+                lat: 19.4326,
+                lng: -99.1332,
+                horario: 'Lun - Vie: 9:00 - 21:00\nSáb - Dom: 10:00 - 18:00',
+                telefono: '527711598765',
+                tiktok: 'https://www.tiktok.com/@tunegocio_cdmx'
+            },
+            {
+                id: 'jalisco',
+                nombre: 'Jalisco',
+                icono: '🌮',
+                desc: 'Sucursal Guadalajara',
+                direccion: 'Av. Chapultepec 567, Col. Americana',
+                ciudad: 'Guadalajara, Jalisco',
+                lat: 20.6597,
+                lng: -103.3496,
+                horario: 'Lun - Sáb: 10:00 - 20:00\nDomingo: 11:00 - 17:00',
+                telefono: '527711598765',
+                tiktok: 'https://www.tiktok.com/@tunegocio_gdl'
+            },
+            {
+                id: 'nuevoleon',
+                nombre: 'Nuevo León',
+                icono: '🏔️',
+                desc: 'Sucursal Monterrey',
+                direccion: 'Av. Constitución 890, Centro',
+                ciudad: 'Monterrey, Nuevo León',
+                lat: 25.6866,
+                lng: -100.3161,
+                horario: 'Lun - Vie: 8:00 - 19:00\nSábado: 9:00 - 15:00',
+                telefono: '527711598765',
+                tiktok: 'https://www.tiktok.com/@tunegocio_mty'
+            },
+            {
+                id: 'yucatan',
+                nombre: 'Yucatán',
+                icono: '🏖️',
+                desc: 'Sucursal Mérida',
+                direccion: 'Calle 60 #345, Centro Histórico',
+                ciudad: 'Mérida, Yucatán',
+                lat: 20.9674,
+                lng: -89.5926,
+                horario: 'Lun - Sáb: 9:00 - 20:00\nDomingo: Cerrado',
+                telefono: '527711598765',
+                tiktok: 'https://www.tiktok.com/@tunegocio_merida'
+            },
+            {
+                id: 'puebla',
+                nombre: 'Puebla',
+                icono: '🏺',
+                desc: 'Sucursal Puebla capital',
+                direccion: 'Av. Juárez 456, Centro Histórico',
+                ciudad: 'Puebla, Puebla',
+                lat: 19.0414,
+                lng: -98.2063,
+                horario: 'Lun - Vie: 9:00 - 20:00\nSáb - Dom: 10:00 - 16:00',
+                telefono: '527711598765',
+                tiktok: 'https://www.tiktok.com/@tunegocio_puebla'
+            },
+            {
+                id: 'queretaro',
+                nombre: 'Querétaro',
+                icono: '🏛️',
+                desc: 'Sucursal Santiago de Querétaro',
+                direccion: 'Av. 5 de Febrero 789, Centro',
+                ciudad: 'Querétaro, Qro.',
+                lat: 20.5888,
+                lng: -100.3899,
+                horario: 'Lun - Sáb: 10:00 - 21:00\nDomingo: 11:00 - 18:00',
+                telefono: '527711598765',
+                tiktok: 'https://www.tiktok.com/@tunegocio_qro'
+            },
+            {
+                id: 'veracruz',
+                nombre: 'Veracruz',
+                icono: '⚓',
+                desc: 'Sucursal Puerto de Veracruz',
+                direccion: 'Blvd. Manuel Ávila Camacho 101, Centro',
+                ciudad: 'Veracruz, Ver.',
+                lat: 19.1738,
+                lng: -96.1342,
+                horario: 'Lun - Vie: 8:00 - 20:00\nSáb: 9:00 - 17:00\nDomingo: Cerrado',
+                telefono: '527711598765',
+                tiktok: 'https://www.tiktok.com/@tunegocio_veracruz'
+            }
+        ];
+
+        let currentLocal = null;
+
+        // ===== GENERAR TARJETAS =====
+        function renderCards() {
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = locales.map(local => `
+                <div class="card" onclick="openDetail('${local.id}')">
+                    <div class="card-icon">${local.icono}</div>
+                    <div class="card-title">${local.nombre}</div>
+                    <div class="card-desc">${local.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        // ===== ABRIR DETALLE =====
+        function openDetail(id) {
+            currentLocal = locales.find(l => l.id === id);
+            if (!currentLocal) return;
+
+            document.getElementById('detailTitle').textContent = currentLocal.nombre;
+            document.getElementById('detailAddress').textContent = currentLocal.direccion;
+            document.getElementById('detailCity').textContent = currentLocal.ciudad;
+            document.getElementById('detailSchedule').innerHTML = currentLocal.horario.replace(/\n/g, '<br>');
+            document.getElementById('detailPhone').textContent = '+' + currentLocal.telefono;
+
+            // Mapa de Google embebido
+            document.getElementById('detailMap').src = 
+                `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1000!2d${currentLocal.lng}!3d${currentLocal.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTHCsDU4JzAwLjAiTiA5OcKwMzMnMDAuMCJX!5e0!3m2!1ses!2smx!4v1`;
+
+            document.getElementById('homeScreen').style.display = 'none';
+            document.getElementById('detailScreen').style.display = 'flex';
+        }
+
+        // ===== REGRESAR =====
+        function goBack() {
+            const detail = document.getElementById('detailScreen');
+            detail.style.animation = 'slideOutRight 0.3s ease forwards';
+            setTimeout(() => {
+                detail.style.display = 'none';
+                detail.style.animation = 'slideInRight 0.35s ease';
+                document.getElementById('homeScreen').style.display = 'flex';
+            }, 300);
+        }
+
+        // ===== ACCIONES =====
+        function openWhatsApp() {
+            if (!currentLocal) return;
+            const msg = encodeURIComponent(`Hola, vi su página y me interesa información de la sucursal de ${currentLocal.nombre}`);
+            window.open(`https://wa.me/${currentLocal.telefono}?text=${msg}`, '_blank');
+        }
+
+        function openGoogleMaps() {
+            if (!currentLocal) return;
+            window.open(`https://www.google.com/maps/search/?api=1&query=${currentLocal.lat},${currentLocal.lng}`, '_blank');
+        }
+
+        function openTikTok() {
+            if (!currentLocal) return;
+            window.open(currentLocal.tiktok, '_blank');
+        }
+
+        // ===== INICIAR =====
+        renderCards();
+    </script>
+</body>
+</html>
