@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pescadería Agustín</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Grand+Hotel&family=Bitter:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a1628; --bg-secondary: #0d1f3c; --bg-tertiary: #132a4d;
+            --bg-card: #1a3a5c; --text-primary: #ffffff; --text-secondary: #b0c4de;
+            --text-muted: #6b8cae; --accent: #48cae4; --accent-soft: #ff8f70;
+            --success: #2ecc71; --glass: rgba(255,255,255,0.05);
+            --glass-border: rgba(255,255,255,0.08); --shadow: 0 8px 32px rgba(0,0,0,0.3);
+            --bubble-color: rgba(72,202,228,0.15); --nav-bg: rgba(10,22,40,0.95);
+            --input-bg: rgba(255,255,255,0.03); --map-bg: #0d1f3c;
+            --order-color: #f39c12;
+        }
+        :root { color-scheme: dark; }
+        html.light-mode {
+            --bg-primary: #f0f4f8; --bg-secondary: #ffffff; --bg-tertiary: #e8eef5;
+            --bg-card: #dde5ed; --text-primary: #0a1628; --text-secondary: #3a5a7c;
+            --text-muted: #7a9ab8; --accent: #0d8a9c; --accent-soft: #e85d3e;
+            --success: #27ae60; --glass: rgba(10,22,40,0.04);
+            --glass-border: rgba(10,22,40,0.08); --shadow: 0 8px 32px rgba(0,0,0,0.08);
+            --bubble-color: rgba(13,138,156,0.12); --nav-bg: rgba(255,255,255,0.95);
+            --input-bg: rgba(10,22,40,0.03); --map-bg: #e8eef5;
+        }
+        html.light-mode { color-scheme: light; }
+        html.light-mode .ocean-bg::before {
+            background: radial-gradient(ellipse at 20% 80%, var(--bubble-color) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, var(--bubble-color) 0%, transparent 40%), radial-gradient(ellipse at 50% 50%, var(--bg-secondary) 0%, var(--bg-primary) 70%);
+        }
+        html.light-mode .bubble { background: var(--bubble-color); }
+        html.light-mode .bottom-nav, html.light-mode .detail-header { background: var(--nav-bg); border-color: var(--glass-border); }
+        html.light-mode .detail-screen, html.light-mode .fish-detail { background: var(--bg-primary); }
+        html.light-mode .submit-btn { color: white; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary); color: var(--text-primary);
+            height: 100%; overflow: hidden; -webkit-tap-highlight-color: transparent;
+        }
+        .ocean-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .ocean-bg::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 20% 80%, rgba(26,58,92,0.4) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(72,202,228,0.08) 0%, transparent 40%), radial-gradient(ellipse at 50% 50%, rgba(13,31,60,0.8) 0%, var(--bg-primary) 70%);
+            animation: oceanDrift 20s ease-in-out infinite;
+        }
+        @keyframes oceanDrift { 0%,100% { transform: translate(0,0) rotate(0deg); } 33% { transform: translate(-2%,1%) rotate(0.5deg); } 66% { transform: translate(1%,-1%) rotate(-0.3deg); } }
+        .bubble { position: absolute; border-radius: 50%; background: var(--bubble-color); animation: rise linear infinite; }
+        @keyframes rise { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 0.6; } 100% { transform: translateY(-10vh) scale(1); opacity: 0; } }
+        #app { position: relative; z-index: 1; height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--nav-bg); backdrop-filter: blur(20px); border-top: 1px solid var(--glass-border); display: flex; justify-content: space-around; padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 8px)); z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 12px; border: none; background: none; color: var(--text-muted); font-size: 11px; font-family: inherit; cursor: pointer; transition: all 0.2s; border-radius: 12px; }
+        .nav-item.active { color: var(--accent); background: var(--glass); }
+        .nav-item svg { width: 24px; height: 24px; transition: transform 0.2s; }
+        .nav-item.active svg { transform: translateY(-2px); }
+        .screen { display: none; flex-direction: column; height: 100%; overflow: hidden; animation: screenIn 0.35s ease; }
+        .screen.active { display: flex; }
+        @keyframes screenIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .screen-content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 100px; }
+        .screen-content::-webkit-scrollbar { width: 4px; }
+        .screen-content::-webkit-scrollbar-thumb { background: var(--glass); border-radius: 2px; }
+        .screen-header { padding: 20px 16px 16px; text-align: center; }
+        .screen-header h1 { font-family: 'Grand Hotel', cursive; font-size: 28px; font-weight: 700; background: linear-gradient(135deg, var(--accent) 0%, var(--text-secondary) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .screen-header p { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+        .hero { text-align: center; padding: 40px 20px; position: relative; }
+        .hero-icon { font-size: 64px; margin-bottom: 16px; display: inline-block; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .hero h2 { font-family: 'Grand Hotel', cursive; font-size: 32px; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, var(--accent), var(--text-secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { color: var(--text-secondary); font-size: 15px; max-width: 280px; margin: 0 auto 24px; line-height: 1.5; }
+        .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.25); color: var(--success); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; }
+        .home-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 20px; }
+        .home-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px 16px; text-align: center; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden; }
+        .home-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-soft)); opacity: 0; transition: opacity 0.25s; }
+        .home-card:hover, .home-card:active { transform: translateY(-3px); border-color: var(--accent); background: rgba(255,255,255,0.08); }
+        .home-card:hover::before, .home-card:active::before { opacity: 1; }
+        .home-card-icon { font-size: 36px; margin-bottom: 10px; }
+        .home-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .home-card p { font-size: 12px; color: var(--text-muted); }
+        .section-title { display: flex; align-items: center; gap: 8px; margin: 8px 0 16px; font-size: 18px; font-weight: 600; }
+        .section-title .line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--glass-border), transparent); }
+        .fish-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .fish-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; overflow: hidden; transition: all 0.25s; cursor: pointer; }
+        .fish-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .fish-img { width: 100%; height: 120px; background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary)); display: flex; align-items: center; justify-content: center; font-size: 48px; position: relative; }
+        .fish-img .fresh-badge { position: absolute; top: 8px; right: 8px; background: rgba(46,204,113,0.9); color: white; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 10px; }
+        .fish-img .order-badge { position: absolute; top: 8px; left: 8px; background: rgba(243,156,18,0.9); color: white; font-size: 9px; font-weight: 600; padding: 3px 8px; border-radius: 10px; }
+        .fish-img .unavailable-badge { position: absolute; top: 8px; right: 8px; background: rgba(231,76,60,0.9); color: white; font-size: 9px; font-weight: 600; padding: 3px 8px; border-radius: 10px; }
+        .fish-info { padding: 12px; }
+        .fish-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .fish-info .fish-origin { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+        .fish-price { font-size: 16px; font-weight: 700; color: var(--accent-soft); }
+        .fish-price span { font-size: 12px; font-weight: 400; color: var(--text-muted); }
+        .origin-map { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; margin-bottom: 16px; text-align: center; }
+        .origin-map h3 { font-size: 16px; margin-bottom: 16px; color: var(--accent); }
+        .origin-zones { display: flex; flex-direction: column; gap: 12px; }
+        .zone-card { background: var(--input-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 14px; }
+        .zone-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+        .zone-icon.gulf { background: rgba(244,208,63,0.12); }
+        .zone-icon.pacific { background: var(--bubble-color); }
+        .zone-icon.local { background: rgba(46,204,113,0.12); }
+        .zone-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+        .zone-info p { font-size: 12px; color: var(--text-muted); }
+        .zone-tag { display: inline-block; background: var(--bubble-color); color: var(--accent); font-size: 11px; padding: 3px 10px; border-radius: 10px; margin-top: 6px; }
+        .recipe-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; overflow: hidden; margin-bottom: 12px; transition: all 0.25s; }
+        .recipe-card:hover { border-color: var(--accent-soft); }
+        .recipe-header { padding: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; }
+        .recipe-img { width: 64px; height: 64px; border-radius: 12px; background: linear-gradient(135deg, var(--accent-soft), var(--accent)); display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0; }
+        .recipe-meta h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .recipe-meta .recipe-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+        .recipe-tag { font-size: 11px; padding: 3px 10px; border-radius: 10px; background: var(--glass); color: var(--text-muted); }
+        .recipe-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .recipe-body.open { max-height: 800px; }
+        .recipe-details { padding: 0 16px 16px; border-top: 1px solid var(--glass-border); margin-top: 0; padding-top: 16px; }
+        .recipe-details h5 { font-size: 13px; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .recipe-details ul, .recipe-details ol { margin-left: 18px; margin-bottom: 16px; color: var(--text-secondary); font-size: 13px; line-height: 1.7; }
+        .recipe-details li { margin-bottom: 4px; }
+        .locales-list { display: flex; flex-direction: column; gap: 12px; }
+        .local-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px; cursor: pointer; transition: all 0.25s; display: flex; align-items: center; gap: 14px; }
+        .local-card:hover { transform: translateX(4px); border-color: var(--accent); }
+        .local-icon { width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary)); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+        .local-info { flex: 1; }
+        .local-info h4 { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+        .local-info p { font-size: 12px; color: var(--text-muted); }
+        .local-arrow { color: var(--text-muted); font-size: 18px; }
+        .detail-screen { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-primary); z-index: 200; flex-direction: column; animation: slideUp 0.3s ease; }
+        .detail-screen.open { display: flex; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .detail-header { display: flex; align-items: center; gap: 12px; padding: 16px; border-bottom: 1px solid var(--glass-border); background: var(--nav-bg); backdrop-filter: blur(10px); }
+        .detail-back { width: 40px; height: 40px; border-radius: 50%; background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-primary); font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .detail-back:hover { background: var(--glass); }
+        .detail-header h2 { font-size: 18px; font-weight: 600; }
+        .detail-content { flex: 1; overflow-y: auto; padding: 16px; }
+        .detail-map { width: 100%; height: 200px; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border); margin-bottom: 16px; background: var(--bg-secondary); }
+        .detail-map iframe { width: 100%; height: 100%; border: none; }
+        .detail-section { background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+        .detail-section h3 { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+        .detail-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; font-size: 14px; color: var(--text-primary); line-height: 1.5; }
+        .detail-row:last-child { margin-bottom: 0; }
+        .detail-row-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+        .detail-btn { padding: 14px; border-radius: 12px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; color: white; }
+        .detail-btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn-wa { background: #25d366; }
+        .btn-maps { background: #4285f4; }
+        .btn-tiktok { background: #000; border: 1px solid #333; }
+        .btn-fb { background: #1877f2; }
+        .contact-hero { text-align: center; padding: 30px 20px; }
+        .contact-hero h2 { font-family: 'Grand Hotel', cursive; font-size: 24px; margin-bottom: 8px; }
+        .contact-hero p { color: var(--text-primary); font-size: 14px; }
+        .social-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .social-btn { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.25s; color: var(--text-primary); text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .social-btn:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .social-btn svg { width: 32px; height: 32px; }
+        .social-btn span { font-size: 13px; font-weight: 500; }
+        .contact-form { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; }
+        .contact-form h3 { font-size: 16px; margin-bottom: 16px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--glass-border); background: var(--input-bg); color: var(--text-primary); font-family: inherit; font-size: 14px; outline: none; transition: all 0.2s; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); background: var(--glass); }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .submit-btn { width: 100%; padding: 14px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--accent), var(--bg-card)); color: white; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .fish-detail { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-primary); z-index: 200; flex-direction: column; animation: slideUp 0.3s ease; }
+        .fish-detail.open { display: flex; }
+        .fish-hero { height: 200px; background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary)); display: flex; align-items: center; justify-content: center; font-size: 80px; position: relative; }
+        .fish-hero .close-fish { position: absolute; top: 16px; left: 16px; width: 40px; height: 40px; border-radius: 50%; background: var(--glass); border: none; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .fish-detail-content { flex: 1; overflow-y: auto; padding: 20px; }
+        .fish-detail-content h2 { font-family: 'Grand Hotel', cursive; font-size: 24px; margin-bottom: 4px; }
+        .fish-detail-content .fish-sub { color: var(--text-muted); font-size: 14px; margin-bottom: 16px; }
+        .fish-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .fish-stat { background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 12px; padding: 14px 10px; text-align: center; }
+        .fish-stat-value { font-size: 18px; font-weight: 700; color: var(--accent); }
+        .fish-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg-tertiary); border: 1px solid var(--glass-border); color: var(--text-primary); padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 300; opacity: 0; transition: all 0.3s; pointer-events: none; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        @media (min-width: 640px) { .home-grid, .fish-grid { grid-template-columns: repeat(3, 1fr); } .fish-img { height: 140px; } }
+        .chat-toggle { position: fixed; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); right: 16px; z-index: 9999; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--bg-card)); border: none; color: #fff; font-size: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); transition: all 0.3s; }
+        .chat-toggle:hover { transform: scale(1.05); }
+        .chat-toggle.hidden { transform: scale(0); opacity: 0; pointer-events: none; }
+        .chat-panel { position: fixed; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); right: 16px; z-index: 9999; width: calc(100vw - 32px); max-width: 380px; height: 520px; max-height: calc(100vh - 100px); background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 20px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.4); animation: chatSlideUp 0.3s ease; }
+        .chat-panel.open { display: flex; }
+        @keyframes chatSlideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .chat-header { background: linear-gradient(135deg, var(--accent), var(--bg-card)); padding: 16px 18px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+        .chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .chat-info { flex: 1; }
+        .chat-info h4 { font-size: 15px; font-weight: 600; }
+        .chat-info p { font-size: 12px; opacity: 0.85; }
+        .chat-close { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+        .msg-bot, .msg-user { max-width: 85%; padding: 12px 14px; border-radius: 16px; font-size: 13px; line-height: 1.5; animation: msgIn 0.25s ease; }
+        @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-bot { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-primary); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .msg-bot a { color: var(--accent); text-decoration: underline; font-weight: 500; }
+        .msg-bot a:hover { opacity: 0.8; }
+        .msg-user { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 4px; text-align: right; }
+        .chat-options { padding: 12px 16px; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; max-height: 180px; overflow-y: auto; }
+        .chat-options-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .chat-option-btn { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px 14px; color: var(--text-primary); font-size: 13px; font-family: inherit; cursor: pointer; text-align: left; transition: all 0.2s; }
+        .chat-option-btn:hover { background: var(--bg-card); border-color: var(--accent); }
+        .chat-option-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .chat-typing { display: flex; align-items: center; gap: 4px; padding: 8px 14px; }
+        .chat-typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: typing 1.4s infinite; }
+        .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+        @media (max-width: 420px) { .chat-panel { right: 8px; width: calc(100vw - 16px); max-width: none; } }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <button id="darkModeToggle" onclick="toggleDarkMode()" style="position:fixed;top:12px;right:12px;z-index:99999;width:48px;height:48px;border-radius:50%;background:#1a3a5c;border:2px solid rgba(255,255,255,0.2);color:#fff;font-size:22px;cursor:pointer;">🌙</button>
+    <div class="ocean-bg" id="oceanBg"></div>
+    <div id="app">
+        <div class="screen active" id="screen-home">
+            <div class="screen-content">
+                <div class="hero">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px;">
+                        <img src="Imagenes/Pez%20Izquierdo.png" alt="" style="width:70px;height:auto;opacity:0.9;">
+                        <div>
+                            <h2 style="font-family:'Grand Hotel',cursive;font-size:42px;font-weight:400;margin-bottom:-8px;background:none;-webkit-text-fill-color:var(--text-primary);">Pescadería</h2>
+                            <h2 style="font-family:'Bitter',serif;font-size:38px;font-weight:800;letter-spacing:3px;text-transform:uppercase;background:none;-webkit-text-fill-color:var(--text-primary);">Agustín</h2>
+                        </div>
+                        <img src="Imagenes/Pez%20Derecho.png" alt="" style="width:70px;height:auto;opacity:0.9;">
+                    </div>
+                    <img src="Imagenes/LogoMascota.png" alt="Pescadería Agustín" style="width:100px;height:auto;margin:8px 0;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.3));animation:float 3s ease-in-out infinite;">
+                    <p>La frescura del mar directo a tu mesa. Pescado fresco todos los días.</p>
+                    <div class="hero-badge"><span>&#127775;</span><span>Pescado fresco garantizado</span></div>
+                </div>
+                <div class="home-grid">
+                    <div class="home-card" onclick="navigateTo('locales')"><div class="home-card-icon">&#127970;</div><h3>Nuestros Locales</h3><p>7 sucursales cerca de ti</p></div>
+                    <div class="home-card" onclick="navigateTo('pescados')"><div class="home-card-icon">&#128031;</div><h3>Catálogo</h3><p>Conoce nuestros pescados</p></div>
+                    <div class="home-card" onclick="navigateTo('origen')"><div class="home-card-icon">&#127758;</div><h3>Origen</h3><p>De dónde viene lo fresco</p></div>
+                    <div class="home-card" onclick="navigateTo('recetas')"><div class="home-card-icon">&#127860;</div><h3>Recetas</h3><p>Cocina como un chef</p></div>
+                </div>
+            </div>
+        </div>
+        <div class="screen" id="screen-locales">
+            <div class="screen-header"><h1 style="font-family:'Grand Hotel',cursive;font-size:36px;font-weight:400;">Nuestros Locales</h1><p>Selecciona una sucursal para ver detalles</p></div>
+            <div class="screen-content"><div class="locales-list" id="localesList"></div></div>
+        </div>
+        <div class="screen" id="screen-pescados">
+            <div class="screen-header"><h1 style="font-family:'Grand Hotel',cursive;font-size:36px;font-weight:400;">Catálogo de Pescados</h1><p>Pescado fresco del día con origen certificado</p></div>
+            <div class="screen-content">
+                <div class="section-title"><span>&#128031;</span><span>Disponibles hoy</span><div class="line"></div></div>
+                <div class="fish-grid" id="fishGridHoy"></div>
+                <div class="section-title" style="margin-top:24px;"><span>&#128230;</span><span>Solo por pedido</span><div class="line"></div></div>
+                <div class="fish-grid" id="fishGridPedido"></div>
+            </div>
+        </div>
+        <div class="screen" id="screen-origen">
+            <div class="screen-header"><h1 style="font-family:'Grand Hotel',cursive;font-size:36px;font-weight:400;">Origen y Proveedores</h1><p>Conoce de dónde viene la frescura</p></div>
+            <div class="screen-content">
+                <div class="origin-map"><h3>&#128674; Zonas de Pesca</h3><p style="color:var(--text-primary);font-size:14px;line-height:1.6;">Trabajamos directamente con pescadores locales y cooperativas certificadas en las principales zonas pesqueras de México.</p></div>
+                <div class="origin-zones" id="originZones"></div>
+            </div>
+        </div>
+        <div class="screen" id="screen-recetas">
+            <div class="screen-header"><h1 style="font-family:'Grand Hotel',cursive;font-size:36px;font-weight:400;">Recetas del Chef</h1><p>Prepara el mejor pescado en casa</p></div>
+            <div class="screen-content" id="recipesList"></div>
+        </div>
+        <div class="screen" id="screen-contacto">
+            <div class="screen-content">
+                <div class="contact-hero"><h2 style="font-family:'Grand Hotel',cursive;font-size:32px;font-weight:400;">Contáctanos</h2><p>Estamos aquí para atenderte</p></div>
+                <div class="social-grid">
+                    <a class="social-btn" href="https://wa.me/527713711447" target="_blank"><svg viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg><span>WhatsApp</span></a>
+                    <a class="social-btn" href="https://www.tiktok.com/@pescaderia.agustin" target="_blank"><svg viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.88-2.89 2.89 2.89 0 012.88-2.89c.36 0 .7.07 1.01.19v-3.5a6.33 6.33 0 00-1.01-.08A6.36 6.36 0 003.1 15.6a6.36 6.36 0 006.36 6.36 6.36 6.36 0 006.36-6.36V9.13a8.23 8.23 0 004.77 1.52V7.2a4.85 4.85 0 01-1-.51z"/></svg><span>TikTok</span></a>
+                    <a class="social-btn" href="https://www.facebook.com/share/197YFUrpm4/" target="_blank"><svg viewBox="0 0 24 24" fill="#1877f2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Facebook</span></a>
+                    <a class="social-btn" href="tel:+527713711447"><svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.44-5.15-3.75-6.59-6.59l1.97-1.57a.99.99 0 00.25-1.01 11.36 11.36 0 01-.56-3.53c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1zM5.03 5h1.5c.07.88.22 1.75.45 2.58l-1.2.96c-.41-1.21-.67-2.51-.75-3.54zM19 18.97c-1.03-.08-2.33-.34-3.54-.75l.96-1.2c.83.23 1.7.38 2.58.45v1.5z"/></svg><span>Llamar</span></a>
+                </div>
+                <div class="contact-form">
+                    <h3>Envíanos un mensaje</h3>
+                    <div class="form-group"><label>Nombre</label><input type="text" id="contactName" placeholder="Tu nombre"></div>
+                    <div class="form-group"><label>Correo o Teléfono</label><input type="text" id="contactInfo" placeholder="email o teléfono"></div>
+                    <div class="form-group"><label>Mensaje</label><textarea id="contactMessage" placeholder="¿En qué podemos ayudarte?"></textarea></div>
+                    <button class="submit-btn" onclick="sendContact()">Enviar mensaje</button>
+                </div>
+            </div>
+        </div>
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="navigateTo('home')" data-screen="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Inicio</span></button>
+            <button class="nav-item" onclick="navigateTo('locales')" data-screen="locales"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Locales</span></button>
+            <button class="nav-item" onclick="navigateTo('pescados')" data-screen="pescados"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16s9-15 20-4C24 12 12 24 2 16z"/><circle cx="12" cy="12" r="2"/></svg><span>Pescados</span></button>
+            <button class="nav-item" onclick="navigateTo('recetas')" data-screen="recetas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg><span>Recetas</span></button>
+            <button class="nav-item" onclick="navigateTo('contacto')" data-screen="contacto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>Contacto</span></button>
+        </nav>
+    </div>
+    <div class="detail-screen" id="locationDetail">
+        <div class="detail-header"><button class="detail-back" onclick="closeLocationDetail()">&#8592;</button><h2 id="detailTitle">Sucursal</h2></div>
+        <div class="detail-content">
+            <div class="detail-map"><iframe id="detailMap" allowfullscreen loading="lazy"></iframe></div>
+            <div class="detail-section"><h3>Ubicación</h3><div class="detail-row"><span class="detail-row-icon">&#127970;</span><span id="detailAddress">Dirección</span></div><div class="detail-row"><span class="detail-row-icon">&#127758;</span><span id="detailCity">Ciudad</span></div></div>
+            <div class="detail-section"><h3>Horario</h3><div class="detail-row"><span class="detail-row-icon">&#128197;</span><span id="detailSchedule">Horario</span></div></div>
+            <div class="detail-section"><h3>Contacto</h3><div class="detail-row"><span class="detail-row-icon">&#128241;</span><span id="detailPhone">Teléfono</span></div></div>
+            <div class="detail-actions" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:8px;">
+                <button class="detail-btn btn-wa" onclick="openWhatsApp()" style="flex-direction:column;gap:6px;padding:16px 10px;height:auto;"><svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg><span>WhatsApp</span></button>
+                <button class="detail-btn btn-maps" onclick="openGoogleMaps()" style="flex-direction:column;gap:6px;padding:16px 10px;height:auto;"><svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg><span>Cómo llegar</span></button>
+                <button class="detail-btn btn-tiktok" onclick="openTikTok()" style="flex-direction:column;gap:6px;padding:16px 10px;height:auto;background:#000;border:1px solid #333;"><svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.88-2.89 2.89 2.89 0 012.88-2.89c.36 0 .7.07 1.01.19v-3.5a6.33 6.33 0 00-1.01-.08A6.36 6.36 0 003.1 15.6a6.36 6.36 0 006.36 6.36 6.36 6.36 0 006.36-6.36V9.13a8.23 8.23 0 004.77 1.52V7.2a4.85 4.85 0 01-1-.51z"/></svg><span>TikTok</span></button>
+                <button class="detail-btn btn-fb" onclick="openFacebook()" style="flex-direction:column;gap:6px;padding:16px 10px;height:auto;"><svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg><span>Facebook</span></button>
+            </div>
+        </div>
+    </div>
+    <div class="fish-detail" id="fishDetail">
+        <div class="fish-hero"><button class="close-fish" onclick="closeFishDetail()">&#8592;</button><span id="fishDetailEmoji">&#128031;</span></div>
+        <div class="fish-detail-content">
+            <h2 id="fishDetailName" style="font-family:'Bitter',serif;font-weight:700;">Nombre</h2>
+            <p class="fish-sub" id="fishDetailOrigin">Origen</p>
+            <div class="fish-stats">
+                <div class="fish-stat"><div class="fish-stat-value" id="fishDetailPrice">$0</div><div class="fish-stat-label">por kg</div></div>
+                <div class="fish-stat"><div class="fish-stat-value" id="fishDetailFresh">98%</div><div class="fish-stat-label">frescura</div></div>
+                <div class="fish-stat"><div class="fish-stat-value" id="fishDetailProtein">22g</div><div class="fish-stat-label">proteína</div></div>
+            </div>
+            <div class="detail-section"><h3>Descripción</h3><p id="fishDetailDesc" style="color:var(--text-primary);font-size:14px;line-height:1.7;"></p></div>
+            <div class="detail-section"><h3>Temporada</h3><p id="fishDetailSeason" style="color:var(--text-primary);font-size:14px;"></p></div>
+            <div class="detail-section"><h3>Mejor preparación</h3><p id="fishDetailPrep" style="color:var(--text-primary);font-size:14px;"></p></div>
+        </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script>
+        const locales = [
+            { id: "tehuetlan", nombre: "Tehuetlan", icono: "\uD83C\uDF19", desc: "Plaza principal de Tehuetlan", direccion: "Calle Corregidora, Col. Centro", ciudad: "Tehuetlan, Hidalgo", lat: 21.053322, lng: -98.507449, horario: "Miercoles: 8:00 - 13:00\nViernes: 9:00 - 13:00", telefono: "527713711447", tiktok: "https://www.tiktok.com/@pescaderia.agustin", facebook: "https://www.facebook.com/share/197YFUrpm4/" },
+            { id: "jaltocan", nombre: "Jaltocan", icono: "\uD83C\uDF2E", desc: "Plaza principal de Jaltocan", direccion: "Av. Luis Amador, Centro", ciudad: "Jaltocan, Hidalgo", lat: 21.133271, lng: -98.539013, horario: "Jueves: 7:00 - 14:00", telefono: "527713711447", tiktok: "https://www.tiktok.com/@pescaderia.agustin", facebook: "https://www.facebook.com/share/197YFUrpm4/" },
+            { id: "atlapexco", nombre: "Atlapexco", icono: "\u26F0", desc: "Plaza principal de Atlapexco", direccion: "Gral Felipe Angeles, Mercado", ciudad: "Atlapexco, Hidalgo", lat: 21.020166, lng: -98.345718, horario: "Viernes: 7:00 - 15:00", telefono: "527713711447", tiktok: "https://www.tiktok.com/@pescaderia.agustin", facebook: "https://www.facebook.com/share/197YFUrpm4/" },
+            { id: "santacruz", nombre: "Santa Cruz", icono: "\uD83C\uDFDE", desc: "Plaza Principal de Santa Cruz", direccion: "Calle 12 de Diciembre, Centro", ciudad: "Merida, Yucatan", lat: 21.197598, lng: -98.494718, horario: "Sabado: 9:00 - 12:00", telefono: "527713711447", tiktok: "https://www.tiktok.com/@pescaderia.agustin", facebook: "https://www.facebook.com/share/197YFUrpm4/" },
+            { id: "sanfelipe", nombre: "San Felipe", icono: "\uD83C\uDF04", desc: "Plaza Principal de San Felipe", direccion: "Calle Emiliano Zapata, Centro", ciudad: "San Felipe, Hidalgo", lat: 21.171538, lng: -98.607505, horario: "Lunes - Domingo: 7:00 - 16:00", telefono: "527713711447", tiktok: "https://www.tiktok.com/@pescaderia.agustin", facebook: "https://www.facebook.com/share/197YFUrpm4/" },
+            { id: "huautla", nombre: "Huautla", icono: "\uD83C\uDFDB", desc: "Plaza Principal de Huautla", direccion: "Pl. Constitucion, Centro", ciudad: "Huautla, Hidalgo", lat: 21.032458, lng: -98.286236, horario: "Domingo: 7:00 - 16:00", telefono: "527713711447", tiktok: "https://www.tiktok.com/@pescaderia.agustin", facebook: "https://www.facebook.com/share/197YFUrpm4/" },
+            { id: "huejutla", nombre: "Huejutla", icono: "\u2693", desc: "Sucursal en Huejutla", direccion: "Emiliano Zapata, Col. Adolfo Lopez Mateo", ciudad: "Huejutla, Hidalgo", lat: 21.135323, lng: -98.419596, horario: "Lunes - Domingo: 10:00 - 18:00", telefono: "527713711447", tiktok: "https://www.tiktok.com/@pescaderia.agustin", facebook: "https://www.facebook.com/share/197YFUrpm4/" }
+        ];
+
+        const pescadosHoy = [
+            { id: "mojarra", nombre: "Mojarra", emoji: "\uD83D\uDC1F", precio: "$90-100", disponible: true, categoria: "Pescado de agua dulce" },
+            { id: "lisa", nombre: "Lisa", emoji: "\uD83D\uDC20", precio: "$70", disponible: true, categoria: "Pescado de agua dulce" },
+            { id: "camaron_coctelero", nombre: "Camarón Coctelero", emoji: "\uD83E\uDD90", precio: "$300", disponible: true, categoria: "Marisco" },
+            { id: "bagre_picado", nombre: "Bagre Picado", emoji: "\uD83D\uDC1F", precio: "$120", disponible: true, categoria: "Pescado de agua dulce" },
+            { id: "filete_mojarra", nombre: "Filete de Mojarra", emoji: "\uD83E\uDD58", precio: "$180", disponible: true, categoria: "Filete" },
+            { id: "camaron", nombre: "Camarón", emoji: "\uD83E\uDD90", precio: "$200", disponible: true, categoria: "Marisco" },
+            { id: "sopa_marisco", nombre: "Sopa de Marisco", emoji: "\uD83C\uDF72", precio: "$120", disponible: true, categoria: "Sopa" },
+            { id: "huevo_lisa", nombre: "Hueva de Lisa", emoji: "\uD83E\uDD5A", precio: "$200", disponible: false, categoria: "Especialidad" },
+            { id: "camaron_sin_cabeza", nombre: "Camarón sin Cabeza", emoji: "\uD83E\uDD90", precio: "$280", disponible: true, categoria: "Marisco" }
+        ];
+
+        const pescadosPedido = [
+            { id: "huachinango", nombre: "Huachinango", emoji: "\uD83D\uDC21", precio: "$280", categoria: "Pescado de mar" },
+            { id: "bagre_entero", nombre: "Bagre Entero", emoji: "\uD83D\uDC1F", precio: "$130", categoria: "Pescado de agua dulce" },
+            { id: "jaiba", nombre: "Jaiba", emoji: "\uD83E\uDD80", precio: "$100", categoria: "Marisco" },
+            { id: "acamaya", nombre: "Acamaya", emoji: "\uD83E\uDD90", precio: "$200", categoria: "Marisco" },
+            { id: "acamaya_rayada", nombre: "Acamaya Rayada", emoji: "\uD83E\uDD90", precio: "$900", categoria: "Marisco premium" },
+            { id: "guabina", nombre: "Guabina", emoji: "\uD83D\uDC20", precio: "$100", categoria: "Pescado de agua dulce" },
+            { id: "robalo", nombre: "Robalo", emoji: "\uD83D\uDC1F", precio: "$--", categoria: "Pescado de mar" },
+            { id: "pulpo", nombre: "Pulpo", emoji: "\uD83D\uDC19", precio: "$--", categoria: "Marisco" },
+            { id: "salmon", nombre: "Salmón", emoji: "\uD83D\uDC1F", precio: "$--", categoria: "Pescado importado" }
+        ];
+
+        const origenes = [
+            { icono: "\uD83C\uDF0A", clase: "gulf", nombre: "Golfo de México", desc: "Veracruz, Tamaulipas, Campeche, Yucatán", tag: "Pesca artesanal diaria" },
+            { icono: "\uD83C\uDFD5", clase: "pacific", nombre: "Pacífico Mexicano", desc: "Sinaloa, Nayarit, Jalisco, Oaxaca", tag: "Pesca sustentable" },
+            { icono: "\uD83C\uDF3F", clase: "local", nombre: "Granjas Locales", desc: "Jalisco, Veracruz, Puebla, Hidalgo", tag: "Cultivo responsable" }
+        ];
+
+        const recetas = [
+            { id: 1, nombre: "Mojarra Frita al Mojo de Ajo", emoji: "\uD83C\uDF73", tiempo: "25 min", dificult: "Fácil", pescado: "Mojarra o Tilapia", ingredientes: ["2 mojarras limpias y escamosas","8 dientes de ajo fileteados","1/2 taza de mantequilla","Jugo de 2 limones","Sal y pimienta al gusto","Perejil fresco picado"], pasos: ["Sazona las mojarras con sal, pimienta y jugo de limón.","Fríe el pescado en aceite caliente hasta dorar (5 min por lado).","En otra sartén, derrite la mantequilla y sofríe el ajo hasta dorar.","Vierte el mojo de ajo caliente sobre el pescado frito.","Decora con perejil fresco y acompaña con arroz o ensalada."] },
+            { id: 2, nombre: "Ceviche de Camarón", emoji: "\uD83C\uDF74", tiempo: "40 min", dificult: "Media", pescado: "Camarón fresco", ingredientes: ["500g de camarón cocido","Jugo de 8 limones","1 cebolla morada picada finamente","2 tomates picados","1 chile serrano picado","Cilantro fresco, sal y pimienta","Aguacate en cubos y tostadas"], pasos: ["Cocina el camarón en agua con sal y deja enfriar.","Mezcla con jugo de limón, cebolla, tomate y chile.","Sazona con sal, pimienta y cilantro fresco.","Refrigera 20 minutos para que se marine.","Sirve con aguacate y tostadas crujientes."] },
+            { id: 3, nombre: "Sopa de Mariscos", emoji: "\uD83C\uDF75", tiempo: "45 min", dificult: "Media", pescado: "Mix de mariscos", ingredientes: ["300g de camarón","200g de jaiba","2 filetes de pescado","3 tomates picados","1 cebolla, 2 dientes de ajo","Caldo de pescado, epazote","Limón y salsa picante"], pasos: ["Sofríe cebolla, ajo y tomate hasta formar una salsa.","Agrega el caldo de pescado y lleva a ebullición.","Incorpora los mariscos comenzando por los que más tardan.","Añade epazote y sazona al gusto.","Sirve caliente con limón y salsa picante."] },
+            { id: 4, nombre: "Filete de Mojarra Empanizado", emoji: "\uD83C\uDF76", tiempo: "20 min", dificult: "Fácil", pescado: "Filete de Mojarra", ingredientes: ["4 filetes de mojarra (150g c/u)","2 huevos batidos","1 taza de pan molido","1/2 taza de harina","Sal, pimienta y ajo en polvo","Aceite para freír y limón"], pasos: ["Sazona los filetes con sal, pimienta y ajo en polvo.","Pasa por harina, luego huevo batido y pan molido.","Fríe en aceite caliente a 170°C hasta dorar (3-4 min por lado).","Escurre sobre papel absorbente.","Sirve con limón, mayonesa con chipotle y papas fritas."] }
+        ];
+
+        const chatResponses = {
+            horarios: { q: "¿A qué hora abren?", a: "Nuestros horarios varían por sucursal:<br><br>\uD83C\uDF19 <strong>Tehuetlan:</strong> Miercoles 8:00-13:00, Viernes 9:00-13:00<br><br>\uD83C\uDF2E <strong>Jaltocan:</strong> Jueves 7:00-14:00<br><br>\u26F0 <strong>Atlapexco:</strong> Viernes 7:00-15:00<br><br>\uD83C\uDFDE <strong>Santa Cruz:</strong> Sabado 9:00-12:00<br><br>\uD83C\uDF04 <strong>San Felipe:</strong> Lunes-Domingo 7:00-16:00<br><br>\uD83C\uDFDB <strong>Huautla:</strong> Domingo 7:00-16:00<br><br>\u2693 <strong>Huejutla:</strong> Lunes-Domingo 10:00-18:00" },
+            ubicaciones: { q: "¿Dónde están ubicados?", a: "Tenemos <strong>7 sucursales</strong>. Selecciona una para ver toda la información:", action: "showLocals" },
+            domicilio: { q: "¿Tienen servicio a domicilio?", a: "¡Sí! Hacemos entregas a domicilio actualmente solo en <strong>Huejutla</strong>. El costo de envío es de <strong>$30 pesos</strong> o <strong>gratis en compras mayores a $300</strong>.<br><br>\uD83D\uDCAC <a href=\"https://wa.me/527713711447\" target=\"_blank\">Pide por WhatsApp: +52 771 371 1447</a>" },
+            receta_mojarra: { q: "¿Cómo preparo una mojarra frita?", a: "<strong>Mojarra al Mojo de Ajo:</strong><br><br>1. Sazona la mojarra con sal, pimienta y limón<br>2. Fríe 5 min por lado hasta dorar<br>3. Derrite mantequilla y dora 8 dientes de ajo fileteados<br>4. Vierte el mojo caliente sobre el pescado<br>5. Decora con perejil fresco<br><br>¡Lista en 25 minutos!" },
+            origen: { q: "¿De dónde viene el pescado?", a: "Trabajamos con 3 zonas principales:<br><br>\uD83C\uDF0A <strong>Golfo de México</strong> (Veracruz, Tamaulipas, Yucatán) - pesca artesanal diaria<br><br>\uD83C\uDFD5 <strong>Pacífico Mexicano</strong> (Sinaloa, Nayarit, Jalisco) - pesca sustentable<br><br>\uD83C\uDF3F <strong>Granjas Locales</strong> (Jalisco, Veracruz, Puebla, Hidalgo) - cultivo responsable" },
+            contacto: { q: "¿Cómo los contacto?", a: "Puedes contactarnos por:<br><br>\uD83D\uDCAC <a href=\"https://wa.me/527713711447\" target=\"_blank\">WhatsApp: +52 771 371 1447</a><br>\uD83C\uDFA5 <a href=\"https://www.tiktok.com/@pescaderia.agustin\" target=\"_blank\">TikTok: @pescaderia.agustin</a><br>\uD83D\uDC64 <a href=\"https://www.facebook.com/share/197YFUrpm4/\" target=\"_blank\">Facebook</a><br><br>¡Escríbenos para pedidos, cotizaciones o cualquier duda!" },
+            mayoreo: { q: "¿Venden al mayoreo?", a: "¡Claro! Manejamos precios especiales para compras al mayoreo a partir de <strong>20 kilos</strong>.<br><br>Descuentos:<br>- 20-50 kg: 10% de descuento<br>- 50-100 kg: 15% de descuento<br>- 100+ kg: 20% de descuento<br><br>\uD83D\uDCAC <a href=\"https://wa.me/527713711447\" target=\"_blank\">Cotiza por WhatsApp</a>" },
+            frescura: { q: "¿Qué tan fresco es el pescado?", a: "¡Garantizamos frescura del día! Nuestro pescado llega diariamente desde las zonas pesqueras y granjas locales. Cada pieza pasa por control de calidad antes de llegar al mostrador.<br><br>\u2B50 <strong>Pescado fresco garantizado</strong> o te devolvemos tu dinero." },
+            precios_pescados: { q: "¿Cuánto cuestan los pescados?", a: "Tenemos productos en dos categorías. ¿Cuál te interesa?", action: "showFishMenu" }
+        };
+
+        let currentLocal = null;
+        let chatOpen = false;
+
+        (function() {
+            var saved = localStorage.getItem("lightMode");
+            if (saved === "1") {
+                document.documentElement.classList.add("light-mode");
+                var btn = document.getElementById("darkModeToggle");
+                if (btn) btn.innerHTML = "\u2600\uFE0F";
+            }
+        })();
+
+        function toggleDarkMode() {
+            var html = document.documentElement;
+            var btn = document.getElementById("darkModeToggle");
+            if (html.classList.contains("light-mode")) {
+                html.classList.remove("light-mode");
+                btn.innerHTML = "\uD83C\uDF19";
+                localStorage.setItem("lightMode", "0");
+            } else {
+                html.classList.add("light-mode");
+                btn.innerHTML = "\u2600\uFE0F";
+                localStorage.setItem("lightMode", "1");
+            }
+        }
+
+        function toggleChat() {
+            chatOpen = !chatOpen;
+            document.getElementById("chatPanel").classList.toggle("open", chatOpen);
+            document.getElementById("chatToggle").classList.toggle("hidden", chatOpen);
+            if (chatOpen && document.getElementById("chatMessages").children.length === 0) {
+                setTimeout(function() { addBotMessage("¡Hola! Soy Pescabot, tu asistente de Pescadería Agustín. ¿En qué puedo ayudarte hoy?"); }, 300);
+            }
+        }
+
+        function addBotMessage(text) {
+            var container = document.getElementById("chatMessages");
+            var div = document.createElement("div");
+            div.className = "msg-bot";
+            div.innerHTML = text + '<div class="msg-time">' + getTime() + '</div>';
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addUserMessage(text) {
+            var container = document.getElementById("chatMessages");
+            var div = document.createElement("div");
+            div.className = "msg-user";
+            div.innerHTML = text + '<div class="msg-time">' + getTime() + '</div>';
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showTyping() {
+            var container = document.getElementById("chatMessages");
+            var div = document.createElement("div");
+            div.className = "msg-bot chat-typing";
+            div.id = "typingIndicator";
+            div.innerHTML = "<span></span><span></span><span></span>";
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideTyping() {
+            var el = document.getElementById("typingIndicator");
+            if (el) el.remove();
+        }
+
+        function getTime() {
+            var now = new Date();
+            return now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0");
+        }
+
+        function askQuestion(key) {
+            var data = chatResponses[key];
+            if (!data) return;
+            addUserMessage(data.q);
+            showTyping();
+            setTimeout(function() {
+                hideTyping();
+                addBotMessage(data.a);
+                if (data.action === "showLocals") { showLocalButtons(); }
+                if (data.action === "showFishMenu") { showFishMenu(); }
+            }, 1200);
+        }
+
+        function showFishMenu() {
+            var container = document.getElementById("chatOptions");
+            container.innerHTML = '<div class="chat-options-label">&#128031; Elige una categoría</div>' +
+                '<button class="chat-option-btn" onclick="showFishButtonsHoy()">&#9989; Disponibles hoy (' + pescadosHoy.length + ')</button>' +
+                '<button class="chat-option-btn" onclick="showFishButtonsPedido()">&#128230; Solo por pedido (' + pescadosPedido.length + ')</button>';
+            var back = document.createElement("button");
+            back.className = "chat-option-btn";
+            back.style.background = "var(--bg-card)";
+            back.style.borderStyle = "dashed";
+            back.innerHTML = "&#8592; Volver a preguntas";
+            back.onclick = resetChatOptions;
+            container.appendChild(back);
+        }
+
+        function showFishButtonsHoy() {
+            var container = document.getElementById("chatOptions");
+            container.innerHTML = '<div class="chat-options-label">&#9989; Disponibles hoy</div>';
+            pescadosHoy.forEach(function(p) {
+                var btn = document.createElement("button");
+                btn.className = "chat-option-btn";
+                btn.style.display = "flex";
+                btn.style.alignItems = "center";
+                btn.style.gap = "8px";
+                var badge = p.disponible ? '' : '<span style="color:#e74c3c;font-size:10px;">(No disponible)</span>';
+                btn.innerHTML = '<span style="font-size:20px;">' + p.emoji + '</span><span>' + p.nombre + ' <span style="color:var(--text-muted);font-size:11px;">' + p.precio + '</span> ' + badge + '</span>';
+                btn.onclick = function() { showFishInChat(p, false); };
+                container.appendChild(btn);
+            });
+            var back = document.createElement("button");
+            back.className = "chat-option-btn";
+            back.style.background = "var(--bg-card)";
+            back.style.borderStyle = "dashed";
+            back.innerHTML = "&#8592; Volver";
+            back.onclick = showFishMenu;
+            container.appendChild(back);
+        }
+
+        function showFishButtonsPedido() {
+            var container = document.getElementById("chatOptions");
+            container.innerHTML = '<div class="chat-options-label">&#128230; Solo por pedido</div>';
+            pescadosPedido.forEach(function(p) {
+                var btn = document.createElement("button");
+                btn.className = "chat-option-btn";
+                btn.style.display = "flex";
+                btn.style.alignItems = "center";
+                btn.style.gap = "8px";
+                btn.innerHTML = '<span style="font-size:20px;">' + p.emoji + '</span><span>' + p.nombre + ' <span style="color:var(--order-color);font-size:11px;">' + p.precio + '</span></span>';
+                btn.onclick = function() { showFishInChat(p, true); };
+                container.appendChild(btn);
+            });
+            var back = document.createElement("button");
+            back.className = "chat-option-btn";
+            back.style.background = "var(--bg-card)";
+            back.style.borderStyle = "dashed";
+            back.innerHTML = "&#8592; Volver";
+            back.onclick = showFishMenu;
+            container.appendChild(back);
+        }
+
+        function showFishInChat(p, esPedido) {
+            addUserMessage("Ver precio de " + p.nombre);
+            showTyping();
+            setTimeout(function() {
+                hideTyping();
+                var tipoLabel = esPedido ? '<span style="color:#f39c12;font-size:12px;font-weight:600;">&#128230; SOLO POR PEDIDO</span>' : '<span style="color:#2ecc71;font-size:12px;font-weight:600;">&#9989; DISPONIBLE HOY</span>';
+                if (!p.disponible && !esPedido) tipoLabel = '<span style="color:#e74c3c;font-size:12px;font-weight:600;">&#10060; NO DISPONIBLE</span>';
+                var msg = '<div style="background:var(--bg-secondary);border:1px solid var(--glass-border);border-radius:12px;padding:14px;margin:4px 0;">' +
+                    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
+                    '<h4 style="font-size:18px;font-weight:600;color:var(--accent);">' + p.emoji + ' ' + p.nombre + '</h4>' +
+                    tipoLabel + '</div>' +
+                    '<div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;padding:10px;text-align:center;margin-bottom:10px;">' +
+                    '<div style="font-size:24px;font-weight:700;color:var(--accent-soft);">' + p.precio + '</div>' +
+                    '<div style="font-size:11px;color:var(--text-muted);">por kilo</div></div>' +
+                    '<p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">&#127859; <strong>Categoría:</strong> ' + p.categoria + '</p>' +
+                    '<a href="https://wa.me/527713711447?text=Hola%2C%20me%20interesa%20' + encodeURIComponent(p.nombre) + '" target="_blank" style="display:inline-block;background:rgba(37,211,102,0.15);color:#25d366;padding:8px 14px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;">&#128172; Pedir ' + p.nombre + ' por WhatsApp</a>' +
+                    '</div>';
+                addBotMessage(msg);
+            }, 800);
+        }
+
+        function showLocalButtons() {
+            var container = document.getElementById("chatOptions");
+            container.innerHTML = '<div class="chat-options-label">&#127970; Selecciona una sucursal</div>';
+            locales.forEach(function(l) {
+                var btn = document.createElement("button");
+                btn.className = "chat-option-btn";
+                btn.style.display = "flex";
+                btn.style.alignItems = "center";
+                btn.style.gap = "8px";
+                btn.innerHTML = '<span style="font-size:18px;">' + l.icono + '</span><span>' + l.nombre + ' <span style="color:var(--text-muted);font-size:11px;">' + l.ciudad + '</span></span>';
+                btn.onclick = function() { showLocalInChat(l.id); };
+                container.appendChild(btn);
+            });
+            var back = document.createElement("button");
+            back.className = "chat-option-btn";
+            back.style.background = "var(--bg-card)";
+            back.style.borderStyle = "dashed";
+            back.innerHTML = "&#8592; Volver a preguntas";
+            back.onclick = resetChatOptions;
+            container.appendChild(back);
+        }
+
+        function showLocalInChat(id) {
+            var l = locales.find(function(x) { return x.id === id; });
+            if (!l) return;
+            addUserMessage("Ver info de " + l.nombre);
+            showTyping();
+            setTimeout(function() {
+                hideTyping();
+                var horarioFormatted = l.horario.replace(/\n/g, "<br>");
+                var msg = '<div style="background:var(--bg-secondary);border:1px solid var(--glass-border);border-radius:12px;padding:14px;margin:4px 0;">' +
+                    '<h4 style="font-size:15px;font-weight:600;margin-bottom:10px;color:var(--accent);">' + l.icono + ' ' + l.nombre + '</h4>' +
+                    '<p style="font-size:13px;line-height:1.7;margin-bottom:10px;">' +
+                    '&#127970; <strong>Dirección:</strong> ' + l.direccion + '<br>' +
+                    '&#127758; <strong>Ciudad:</strong> ' + l.ciudad + '<br>' +
+                    '&#128197; <strong>Horario:</strong><br>' + horarioFormatted + '<br>' +
+                    '&#128241; <strong>Tel:</strong> <a href="tel:+' + l.telefono + '">+' + l.telefono + '</a>' +
+                    '</p>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:6px;">' +
+                    '<a href="https://wa.me/' + l.telefono + '?text=Hola%2C%20vi%20su%20pagina%20y%20me%20interesa%20informacion%20de%20la%20sucursal%20de%20' + encodeURIComponent(l.nombre) + '" target="_blank" style="background:rgba(37,211,102,0.15);color:#25d366;padding:6px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:500;">&#128172; WhatsApp</a>' +
+                    '<a href="https://www.google.com/maps/search/?api=1&query=' + l.lat + ',' + l.lng + '" target="_blank" style="background:rgba(66,133,244,0.15);color:#4285f4;padding:6px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:500;">&#128205; Cómo llegar</a>' +
+                    '<a href="' + l.tiktok + '" target="_blank" style="background:rgba(0,0,0,0.3);color:#fff;border:1px solid #333;padding:6px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:500;">&#127909; TikTok</a>' +
+                    '<a href="' + l.facebook + '" target="_blank" style="background:rgba(24,119,242,0.15);color:#1877f2;padding:6px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:500;">&#128100; Facebook</a>' +
+                    '</div></div>';
+                addBotMessage(msg);
+            }, 800);
+        }
+
+        function resetChatOptions() {
+            var container = document.getElementById("chatOptions");
+            container.innerHTML = '<div class="chat-options-label">Preguntas frecuentes</div>' +
+                '<button class="chat-option-btn" onclick="askQuestion(\'precios_pescados\')">&#128031; ¿Cuánto cuestan los pescados?</button>' +
+                '<button class="chat-option-btn" onclick="askQuestion(\'horarios\')">&#9201; ¿A qué hora abren?</button>' +
+                '<button class="chat-option-btn" onclick="askQuestion(\'ubicaciones\')">&#128205; ¿Dónde están ubicados?</button>' +
+                '<button class="chat-option-btn" onclick="askQuestion(\'domicilio\')">&#128666; ¿Tienen servicio a domicilio?</button>' +
+                '<button class="chat-option-btn" onclick="askQuestion(\'receta_mojarra\')">&#127860; ¿Cómo preparo una mojarra frita?</button>' +
+                '<button class="chat-option-btn" onclick="askQuestion(\'origen\')">&#127758; ¿De dónde viene el pescado?</button>' +
+                '<button class="chat-option-btn" onclick="askQuestion(\'mayoreo\')">&#128200; ¿Venden al mayoreo?</button>' +
+                '<button class="chat-option-btn" onclick="askQuestion(\'frescura\')">&#127775; ¿Qué tan fresco es el pescado?</button>' +
+                '<button class="chat-option-btn" onclick="askQuestion(\'contacto\')">&#128172; ¿Cómo los contacto?</button>';
+        }
+
+        function init() {
+            createBubbles();
+            renderLocales();
+            renderFishHoy();
+            renderFishPedido();
+            renderOrigin();
+            renderRecipes();
+        }
+
+        function createBubbles() {
+            var container = document.getElementById("oceanBg");
+            for (var i = 0; i < 15; i++) {
+                var bubble = document.createElement("div");
+                bubble.className = "bubble";
+                var size = Math.random() * 20 + 8;
+                bubble.style.width = size + "px";
+                bubble.style.height = size + "px";
+                bubble.style.left = Math.random() * 100 + "%";
+                bubble.style.animationDuration = (Math.random() * 8 + 6) + "s";
+                bubble.style.animationDelay = (Math.random() * 5) + "s";
+                container.appendChild(bubble);
+            }
+        }
+
+        function navigateTo(screen) {
+            document.querySelectorAll(".screen").forEach(function(s) { s.classList.remove("active"); });
+            document.getElementById("screen-" + screen).classList.add("active");
+            document.querySelectorAll(".nav-item").forEach(function(n) { n.classList.remove("active"); });
+            document.querySelector('.nav-item[data-screen="' + screen + '"]').classList.add("active");
+        }
+
+        function renderLocales() {
+            var list = document.getElementById("localesList");
+            list.innerHTML = locales.map(function(l) {
+                return '<div class="local-card" onclick="openLocationDetail(\'' + l.id + '\')">' +
+                    '<div class="local-icon">' + l.icono + '</div>' +
+                    '<div class="local-info"><h4>' + l.nombre + '</h4><p>' + l.desc + '</p></div>' +
+                    '<div class="local-arrow">&#8250;</div></div>';
+            }).join("");
+        }
+
+        function renderFishHoy() {
+            var grid = document.getElementById("fishGridHoy");
+            grid.innerHTML = pescadosHoy.map(function(p) {
+                var badge = p.disponible ? '<span class="fresh-badge">Fresco</span>' : '<span class="unavailable-badge">No disp.</span>';
+                return '<div class="fish-card" onclick="openFishDetail(\'' + p.id + '\', false)">' +
+                    '<div class="fish-img">' + badge + p.emoji + '</div>' +
+                    '<div class="fish-info"><h4>' + p.nombre + '</h4><p class="fish-origin">' + p.categoria + '</p>' +
+                    '<div class="fish-price">' + p.precio + ' <span>/ kg</span></div></div></div>';
+            }).join("");
+        }
+
+        function renderFishPedido() {
+            var grid = document.getElementById("fishGridPedido");
+            grid.innerHTML = pescadosPedido.map(function(p) {
+                return '<div class="fish-card" onclick="openFishDetail(\'' + p.id + '\', true)">' +
+                    '<div class="fish-img"><span class="order-badge">Pedido</span>' + p.emoji + '</div>' +
+                    '<div class="fish-info"><h4>' + p.nombre + '</h4><p class="fish-origin">' + p.categoria + '</p>' +
+                    '<div class="fish-price">' + p.precio + ' <span>/ kg</span></div></div></div>';
+            }).join("");
+        }
+
+        function openLocationDetail(id) {
+            currentLocal = locales.find(function(l) { return l.id === id; });
+            if (!currentLocal) return;
+            document.getElementById("detailTitle").textContent = currentLocal.nombre;
+            document.getElementById("detailAddress").textContent = currentLocal.direccion;
+            document.getElementById("detailCity").textContent = currentLocal.ciudad;
+            document.getElementById("detailSchedule").innerHTML = currentLocal.horario.replace(/\n/g, "<br>");
+            document.getElementById("detailPhone").textContent = "+" + currentLocal.telefono;
+            document.getElementById("detailMap").src = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1000!2d" + currentLocal.lng + "!3d" + currentLocal.lat + "!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTHCsDU4JzAwLjAiTiA5OcKwMzMnMDAuMCJX!5e0!3m2!1ses!2smx!4v1";
+            document.getElementById("locationDetail").classList.add("open");
+        }
+
+        function closeLocationDetail() {
+            document.getElementById("locationDetail").classList.remove("open");
+        }
+
+        function openWhatsApp() {
+            if (!currentLocal) return;
+            var msg = encodeURIComponent("Hola, vi su pagina y me interesa informacion de la sucursal de " + currentLocal.nombre);
+            window.open("https://wa.me/" + currentLocal.telefono + "?text=" + msg, "_blank");
+        }
+
+        function openGoogleMaps() {
+            if (!currentLocal) return;
+            window.open("https://www.google.com/maps/search/?api=1&query=" + currentLocal.lat + "," + currentLocal.lng, "_blank");
+        }
+
+        function openTikTok() {
+            if (!currentLocal) return;
+            window.open(currentLocal.tiktok, "_blank");
+        }
+
+        function openFacebook() {
+            if (!currentLocal) return;
+            window.open(currentLocal.facebook, "_blank");
+        }
+
+        function openFishDetail(id, esPedido) {
+            var arr = esPedido ? pescadosPedido : pescadosHoy;
+            var p = arr.find(function(f) { return f.id === id; });
+            if (!p) return;
+            document.getElementById("fishDetailEmoji").innerHTML = p.emoji;
+            document.getElementById("fishDetailName").textContent = p.nombre;
+            document.getElementById("fishDetailOrigin").textContent = p.categoria + (esPedido ? " \u2022 Solo por pedido" : "");
+            document.getElementById("fishDetailPrice").textContent = p.precio;
+            document.getElementById("fishDetailFresh").textContent = p.disponible !== false ? "99%" : "N/A";
+            document.getElementById("fishDetailProtein").textContent = "22g";
+            document.getElementById("fishDetailDesc").textContent = p.nombre + " de la mejor calidad, seleccionado cuidadosamente para garantizar frescura y sabor en cada bocado.";
+            document.getElementById("fishDetailSeason").textContent = esPedido ? "Bajo pedido previo (24-48h)" : "Todo el año";
+            document.getElementById("fishDetailPrep").textContent = "Consulta nuestras recetas del chef para prepararlo como un profesional.";
+            document.getElementById("fishDetail").classList.add("open");
+        }
+
+        function closeFishDetail() {
+            document.getElementById("fishDetail").classList.remove("open");
+        }
+
+        function renderOrigin() {
+            var container = document.getElementById("originZones");
+            container.innerHTML = origenes.map(function(o) {
+                return '<div class="zone-card"><div class="zone-icon ' + o.clase + '">' + o.icono + '</div>' +
+                    '<div class="zone-info"><h4>' + o.nombre + '</h4><p>' + o.desc + '</p>' +
+                    '<span class="zone-tag">' + o.tag + '</span></div></div>';
+            }).join("");
+        }
+
+        function renderRecipes() {
+            var list = document.getElementById("recipesList");
+            list.innerHTML = recetas.map(function(r) {
+                return '<div class="recipe-card"><div class="recipe-header" onclick="toggleRecipe(' + r.id + ')">' +
+                    '<div class="recipe-img">' + r.emoji + '</div><div class="recipe-meta"><h4>' + r.nombre + '</h4>' +
+                    '<div class="recipe-tags"><span class="recipe-tag">&#9201; ' + r.tiempo + '</span>' +
+                    '<span class="recipe-tag">' + r.dificult + '</span><span class="recipe-tag">' + r.pescado + '</span></div></div></div>' +
+                    '<div class="recipe-body" id="recipe-' + r.id + '"><div class="recipe-details">' +
+                    '<h5>Ingredientes</h5><ul>' + r.ingredientes.map(function(i) { return "<li>" + i + "</li>"; }).join("") + '</ul>' +
+                    '<h5>Preparación</h5><ol>' + r.pasos.map(function(p) { return "<li>" + p + "</li>"; }).join("") + '</ol>' +
+                    '</div></div></div>';
+            }).join("");
+        }
+
+        function toggleRecipe(id) {
+            var body = document.getElementById("recipe-" + id);
+            body.classList.toggle("open");
+        }
+
+        function sendContact() {
+            var name = document.getElementById("contactName").value;
+            var info = document.getElementById("contactInfo").value;
+            var msg = document.getElementById("contactMessage").value;
+            if (!name || !msg) { showToast("Por favor completa tu nombre y mensaje"); return; }
+            var text = encodeURIComponent("Hola, soy " + name + ". " + msg + " (Contacto: " + info + ")");
+            window.open("https://wa.me/527713711447?text=" + text, "_blank");
+            showToast("Redirigiendo a WhatsApp...");
+        }
+
+        function showToast(message) {
+            var toast = document.getElementById("toast");
+            toast.textContent = message;
+            toast.classList.add("show");
+            setTimeout(function() { toast.classList.remove("show"); }, 3000);
+        }
+
+        init();
+    </script>
+    <button class="chat-toggle" id="chatToggle" onclick="toggleChat()" title="Chat con nosotros">&#128172;</button>
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+            <div class="chat-avatar">&#129416;</div>
+            <div class="chat-info"><h4>Pescabot</h4><p>Asistente virtual</p></div>
+            <button class="chat-close" onclick="toggleChat()">&#10005;</button>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-options" id="chatOptions">
+            <div class="chat-options-label">Preguntas frecuentes</div>
+            <button class="chat-option-btn" onclick='askQuestion("precios_pescados")'>&#128031; ¿Cuánto cuestan los pescados?</button>
+            <button class="chat-option-btn" onclick='askQuestion("horarios")'>&#9201; ¿A qué hora abren?</button>
+            <button class="chat-option-btn" onclick='askQuestion("ubicaciones")'>&#128205; ¿Dónde están ubicados?</button>
+            <button class="chat-option-btn" onclick='askQuestion("domicilio")'>&#128666; ¿Tienen servicio a domicilio?</button>
+            <button class="chat-option-btn" onclick='askQuestion("receta_mojarra")'>&#127860; ¿Cómo preparo una mojarra frita?</button>
+            <button class="chat-option-btn" onclick='askQuestion("origen")'>&#127758; ¿De dónde viene el pescado?</button>
+            <button class="chat-option-btn" onclick='askQuestion("mayoreo")'>&#128200; ¿Venden al mayoreo?</button>
+            <button class="chat-option-btn" onclick='askQuestion("frescura")'>&#127775; ¿Qué tan fresco es el pescado?</button>
+            <button class="chat-option-btn" onclick='askQuestion("contacto")'>&#128172; ¿Cómo los contacto?</button>
+        </div>
+    </div>
+</body>
+</html>
